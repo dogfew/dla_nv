@@ -30,8 +30,6 @@ class BufferDataset(Dataset):
                 "path": file_path,
             }
             self.buffer.append(entry)
-            if len(self.buffer) > 32:
-                break
         self.length_dataset = len(self.buffer)
 
     def __len__(self):

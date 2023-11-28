@@ -167,10 +167,10 @@ class Trainer(BaseTrainer):
             self.optimizer_discriminator.state_dict()["param_groups"][0]["lr"],
         )
         audio_generator_example = (
-            batch["wave_fake_detached"][0].cpu().to(torch.float32).numpy().flatten()
+            batch["wave_fake_detached"][0].detach().cpu().to(torch.float32).numpy().flatten()
         )
         audio_true_example = (
-            batch["wave_true"][0].cpu().to(torch.float32).numpy().flatten()
+            batch["wave_true"][0].detach().cpu().to(torch.float32).numpy().flatten()
         )
         self.writer.add_audio(
             "generated",
@@ -184,7 +184,7 @@ class Trainer(BaseTrainer):
         )
         self.writer.add_audio(
             f"griffin-lim",
-            self.griffin_lim(batch['mel_true']).cpu().flatten(),
+            self.griffin_lim(batch['mel_true'][0].detach()).cpu().flatten(),
             sample_rate=22050,
         )
         self._log_spectrogram(batch, mode="train")
