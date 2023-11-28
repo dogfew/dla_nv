@@ -1,0 +1,57 @@
+{
+  "name": "gan",
+  "n_gpu": 1,
+  "arch": {
+    "type": "HiFiGAN",
+    "args": {
+    }
+  },
+  "data": {
+      "train": {
+        "batch_size": 16,
+        "num_workers": 8,
+        "datasets": [
+          {
+            "type": "BufferDataset",
+            "args": {
+              "wav_dir": "data/LJSpeech-1.1/wavs/"
+            }
+          }
+        ]
+      }
+  },
+  "optimizer": {
+    "type": "AdamW",
+    "args": {
+      "lr": 2e-4,
+      "weight_decay": 1e-2,
+      "betas": [0.8, 0.99]
+    }
+  },
+  "loss": {
+    "type": "HiFiGANLoss",
+    "args": {
+    }
+  },
+  "metrics": [
+  ],
+  "lr_scheduler": {
+    "type": "ExponentialLR",
+    "args": {
+      "gamma": 0.998
+    }
+  },
+  "trainer": {
+    "epochs": 400,
+    "save_dir": "saved/",
+    "save_period": 15,
+    "verbosity": 2,
+    "early_stop": 100,
+    "visualize": "wandb",
+    "wandb_project": "nv_project",
+    "grad_norm_clip": 5.0,
+    "log_predictions_step_epoch": 5,
+    "mixed_precision": true,
+    "len_epoch": 100
+  }
+}
