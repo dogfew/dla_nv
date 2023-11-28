@@ -1,9 +1,7 @@
 import PIL
 import torch
 from torch.cuda.amp import GradScaler
-from torch.nn.utils import (
-    clip_grad_norm_, clip_grad_value_
-)
+from torch.nn.utils import clip_grad_norm_, clip_grad_value_
 from torchvision.transforms import (
     ToTensor,
 )
@@ -24,42 +22,44 @@ class Trainer(BaseTrainer):
     """
 
     def __init__(
-        self,
-        model,
-        criterion,
-        metrics,
-        optimizer_generator,
-        optimizer_discriminator,
-        config,
-        device,
-        dataloaders,
-        log_step=400,  # how often WANDB will log
-        log_predictions_step_epoch=5,
-        mixed_precision=False,
-        scheduler_generator=None,
-        scheduler_discriminator=None,
-        len_epoch=None,
-        skip_oom=True,
+            self,
+            model,
+            criterion,
+            metrics,
+            optimizer_generator,
+            optimizer_discriminator,
+            config,
+            device,
+            dataloaders,
+            log_step=400,  # how often WANDB will log
+            log_predictions_step_epoch=5,
+            mixed_precision=False,
+            scheduler_generator=None,
+            scheduler_discriminator=None,
+            len_epoch=None,
+            skip_oom=True,
     ):
         super().__init__(
             model,
             criterion,
-            metrics,
-            [
+            metrics=metrics,
+            optimizers=[
                 optimizer_generator,
                 optimizer_discriminator,
             ],
-            config,
-            device,
-            [
+            config=config,
+            device=device,
+            lr_schedulers=[
                 scheduler_generator,
                 scheduler_discriminator,
             ],
         )
         self.skip_oom = skip_oom
         self.train_dataloader = dataloaders["train"]
+        self.evaluation_dataloaders = {
+            k: v for k, v in dataloaders.items() if k != "train"
+        }
         self.config = config
-        self.samplerate = 22050
         if len_epoch is None:
             self.len_epoch = len(self.train_dataloader)
         else:
@@ -73,13 +73,11 @@ class Trainer(BaseTrainer):
         self.log_predictions_step_epoch = log_predictions_step_epoch
         self.mixed_precision = mixed_precision
         self.train_metrics = MetricTracker(
-            "discriminator_loss",
-            "generator_loss",
             "grad norm",
-            *[m.name for m in self.metrics],
+            *metrics,
             writer=self.writer,
         )
-        self.scaler = GradScaler(init_scale=8192, enabled=self.mixed_precision)
+        self.scaler = GradScaler(init_scale=512, enabled=self.mixed_precision)
 
     @staticmethod
     def move_batch_to_device(batch, device: torch.device):
@@ -93,14 +91,11 @@ class Trainer(BaseTrainer):
         self.scaler.unscale_(optimizer)
         if self.config["trainer"].get("grad_norm_clip") is not None:
             try:
-                clip_grad_value_(
-                    parameters=self.model.parameters(),
-                    clip_value=1000.
-                )
+                clip_grad_value_(parameters=self.model.parameters(), clip_value=1000.0)
                 clip_grad_norm_(
                     parameters=self.model.parameters(),
                     max_norm=self.config["trainer"]["grad_norm_clip"],
-                    error_if_nonfinite=True
+                    error_if_nonfinite=True,
                 )
             except RuntimeError:
                 return False
@@ -110,18 +105,16 @@ class Trainer(BaseTrainer):
         self.model.train()
         self.criterion.train()
         self.train_metrics.reset()
-        batch_idx = 0
         for i, batch in enumerate(
-            tqdm(
-                self.train_dataloader,
-                desc="train",
-                total=self.len_epoch,
-            )
+                tqdm(
+                    self.train_dataloader,
+                    desc="train",
+                    total=self.len_epoch,
+                )
         ):
             try:
                 batch = self.process_batch(
                     batch,
-                    batch_idx=batch_idx,  #
                     metrics=self.train_metrics,
                 )
             except RuntimeError as e:
@@ -134,33 +127,21 @@ class Trainer(BaseTrainer):
                     continue
                 else:
                     raise e
-            for loss_type in [
-                "generator_loss",
-                "discriminator_loss",
-            ]:
-                self.train_metrics.update(
-                    loss_type,
-                    batch.get(loss_type, torch.tensor(torch.nan)).detach().cpu().item(),
-                )
             self.train_metrics.update(
                 "grad norm",
                 self.get_grad_norm(),
             )
-            if batch_idx == 0:
+            if i == 0:
                 last_train_metrics = self.debug(
-                    batch,
-                    batch_idx,
-                    epoch,
+                    batch, i, epoch,
                 )
-            elif batch_idx >= self.len_epoch:
+            elif i >= self.len_epoch:
                 break
-            batch_idx += 1
         self.scheduler_generator.step()
         self.scheduler_discriminator.step()
         log = last_train_metrics
-        if epoch % self.log_predictions_step_epoch == 0:
-            print("Logging predictions!")
-            self._log_predictions()
+        for part, dataloader in self.evaluation_dataloaders.items():
+            self._evaluation_epoch(epoch, part, dataloader)
         return log
 
     @torch.no_grad()
@@ -184,10 +165,7 @@ class Trainer(BaseTrainer):
             "learning rate generator",
             self.optimizer_generator.state_dict()["param_groups"][0]["lr"],
         )
-        self.writer.add_scalar(
-            "scaler factor",
-            self.scaler.get_scale()
-        )
+        self.writer.add_scalar("scaler factor", self.scaler.get_scale())
         self.writer.add_scalar(
             "learning rate discriminator",
             self.optimizer_discriminator.state_dict()["param_groups"][0]["lr"],
@@ -199,7 +177,7 @@ class Trainer(BaseTrainer):
             batch["wave_true"][0].cpu().to(torch.float32).numpy().flatten()
         )
         self.writer.add_audio(
-            "generator",
+            "generated",
             audio_generator_example,
             sample_rate=22050,
         )
@@ -208,21 +186,16 @@ class Trainer(BaseTrainer):
             audio_true_example,
             sample_rate=22050,
         )
-
-        # try:
-        #     self._log_spectrogram(batch)
-        # except Exception as e:
-        #     print(f"Error displaying spectrogram: {e}. Continue.")
+        self._log_spectrogram(batch, mode="train")
         self._log_scalars(self.train_metrics)
         last_train_metrics = self.train_metrics.result()
         self.train_metrics.reset()
         return last_train_metrics
 
     def process_batch(
-        self,
-        batch,
-        batch_idx: int,
-        metrics: MetricTracker,
+            self,
+            batch,
+            metrics: MetricTracker,
     ):
         batch = self.move_batch_to_device(batch, self.device)
         with torch.no_grad():
@@ -269,23 +242,19 @@ class Trainer(BaseTrainer):
         self.scaler.step(self.optimizer_generator)
         self.scaler.update()
 
-        metrics.update(
-            "discriminator_loss",
-            batch["discriminator_loss"].item(),
-        )
-        metrics.update(
-            "generator_loss",
-            batch["generator_loss"].item(),
-        )
-        for met in self.metrics:
-            metrics.update(met.name, met(**batch))
+        for item in batch:
+            if item in self.train_metrics.keys():
+                metrics.update(
+                    item,
+                    batch[item].item(),
+                )
         return batch
 
     def _progress(self, batch_idx):
         base = "[{}/{} ({:.0f}%)]"
         if hasattr(
-            self.train_dataloader,
-            "n_samples",
+                self.train_dataloader,
+                "n_samples",
         ):
             current = batch_idx * self.train_dataloader.batch_size
             total = self.train_dataloader.n_samples
@@ -299,32 +268,44 @@ class Trainer(BaseTrainer):
         )
 
     @torch.no_grad()
-    def _log_predictions(self):
+    def _evaluation_epoch(self, epoch, part, dataloader):
         self.model.eval()
-        rows = {}
+        for batch_idx, batch in tqdm(
+                enumerate(dataloader),
+                desc=part,
+                total=len(dataloader),
+        ):
+            batch = self.move_batch_to_device(batch, self.device)
+            batch.update(self.model(**batch))
+            batch.update(self.model.generator(**batch))
+
+            self.writer.add_audio(
+                f"test_generated_{batch_idx}",
+                batch["wave_fake"].cpu().flatten(),
+                sample_rate=22050,
+                caption=f"#{batch_idx}",
+            )
+            self._log_spectrogram(batch, mode="test", idx=str(batch_idx))
+        return None
 
     @staticmethod
     def make_image(buff):
         return ToTensor()(PIL.Image.open(buff))
 
     @torch.no_grad()
-    def _log_spectrogram(self, batch):
+    def _log_spectrogram(self, batch, mode="train", idx=""):
         spectrogram_types = [
             "_true",
             "_fake",
         ]
         for spectrogram_type in spectrogram_types:
             spectrogram = (
-                batch[f"mel{spectrogram_type}"][0]
-                .detach()
-                .cpu()
-                .to(torch.float64)
-                .transpose(1, 0)
+                batch[f"mel{spectrogram_type}"][0].detach().cpu().to(torch.float64)
             )
             spectrogram = torch.nan_to_num(spectrogram)
             buf = plot_spectrogram_to_buf(spectrogram)
             self.writer.add_image(
-                f"spectrogram_{spectrogram_type}",
+                f"{mode}{idx}_mel_{spectrogram_type}",
                 Trainer.make_image(buf),
             )
 
@@ -338,7 +319,6 @@ class Trainer(BaseTrainer):
             torch.stack(
                 [
                     torch.norm(
-                        # nan occurs in first batch in first run with grad scaler
                         torch.nan_to_num(
                             p.grad,
                             nan=0,
@@ -354,8 +334,8 @@ class Trainer(BaseTrainer):
 
     @torch.no_grad()
     def _log_scalars(
-        self,
-        metric_tracker: MetricTracker,
+            self,
+            metric_tracker: MetricTracker,
     ):
         if self.writer is None:
             return

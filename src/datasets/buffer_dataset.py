@@ -26,10 +26,12 @@ class BufferDataset(Dataset):
         for file_path in tqdm(iterable=sorted(self.file_list), desc="Loading dataset"):
             waveform, _ = librosa.load(file_path, sr=22050)
             entry = {
-                "wave": waveform[: self.max_len],
+                "wave": waveform,
                 "path": file_path,
             }
             self.buffer.append(entry)
+            if len(self.buffer)> 32:
+                break
         self.length_dataset = len(self.buffer)
 
     def __len__(self):
@@ -41,7 +43,7 @@ class BufferDataset(Dataset):
         if len(waveform) >= self.max_len:
             max_start_index = len(waveform) - self.max_len
             start_index = random.randint(0, max_start_index)
-            waveform_segment = waveform[start_index: start_index + self.max_len]
+            waveform_segment = waveform[start_index : start_index + self.max_len]
         else:
             waveform_segment = waveform
         return {

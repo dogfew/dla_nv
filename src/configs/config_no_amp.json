@@ -14,13 +14,13 @@
           {
             "type": "BufferDataset",
             "args": {
-              "max_len": 22528,
+              "max_len": 8192,
               "wav_dir": "data/LJSpeech-1.1/wavs/"
             }
           }
         ]
       },
-    "test": {
+      "test": {
       "batch_size": 1,
       "datasets": [
         {
@@ -69,7 +69,7 @@
     "wandb_project": "nv_project",
     "grad_norm_clip": 5.0,
     "log_predictions_step_epoch": 5,
-    "mixed_precision": true,
+    "mixed_precision": false,
     "len_epoch": 100
   }
 }

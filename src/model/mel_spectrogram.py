@@ -39,11 +39,12 @@ class MelSpectrogram(nn.Module):
             f_max=config.f_max,
             n_mels=config.n_mels,
             center=False,
+            power=config.power,
             pad=(config.n_fft - config.hop_length) // 2,
         )
 
         # The is no way to set power in constructor in 0.5.0 version.
-        self.mel_spectrogram.spectrogram.power = config.power
+        # self.mel_spectrogram.spectrogram.power = config.power
 
         # Default `torchaudio` mel_true basis uses HTK formula. In order to be compatible with WaveGlow
         # we decided to use Slaney one instead (as well as `librosa` does by default).

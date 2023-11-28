@@ -49,7 +49,7 @@ def main(config):
             # loss_module = torch.compile(loss_module, mode="reduce-overhead")
         except Exception:
             print("Could not compile loss")
-    metrics = []
+    metrics = config['metrics']
 
     # build optimizer, learning rate scheduler. delete every line containing lr_scheduler for
     # disabling scheduler

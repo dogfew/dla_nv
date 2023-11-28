@@ -2,9 +2,7 @@ from typing import Callable
 
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils import (
-    weight_norm,
-)
+from torch.nn.utils import weight_norm
 
 from src.model.base_discriminator import BaseDiscriminator
 
