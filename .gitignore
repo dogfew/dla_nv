@@ -117,10 +117,8 @@ mixtures_data.zip/
 __MACOSX/
 /default_test_model/
 /.virtual_documents/
-/.virtual_documents/
 /dla_asr/
 /results_dir/
-/.virtual_documents/
 /wham_scripts/
 /wham_noise/
 /new_dir/
@@ -138,3 +136,4 @@ __MACOSX/
 /results/
 /your_dir/
 /LJSpeech-1.1.tar.bz2
+/final_results/
