@@ -14,6 +14,7 @@ from src.utils import (
     MetricTracker,
 )
 from src.utils import optional_autocast
+from src.model.mel_spectrogram import GriffinLim
 
 
 class Trainer(BaseTrainer):
@@ -72,6 +73,7 @@ class Trainer(BaseTrainer):
             writer=self.writer,
         )
         self.scaler = GradScaler(init_scale=512, enabled=self.mixed_precision)
+        self.griffin_lim = GriffinLim().cuda()
 
     @staticmethod
     def move_batch_to_device(batch, device: torch.device):
@@ -180,6 +182,11 @@ class Trainer(BaseTrainer):
             audio_true_example,
             sample_rate=22050,
         )
+        self.writer.add_audio(
+            f"griffin-lim",
+            self.griffin_lim(batch['mel_true']).cpu().flatten(),
+            sample_rate=22050,
+        )
         self._log_spectrogram(batch, mode="train")
         self._log_scalars(self.train_metrics)
         last_train_metrics = self.train_metrics.result()
@@ -286,7 +293,13 @@ class Trainer(BaseTrainer):
                     f"test_true_{batch_idx}",
                     batch["wave_true"].cpu().flatten(),
                     sample_rate=22050,
-                    caption=f"#{batch_idx}",
+                    caption=f"True #{batch_idx}",
+                )
+                self.writer.add_audio(
+                    f"test_griffinlim_{batch_idx}",
+                    self.griffin_lim(batch['mel_true']).cpu().flatten(),
+                    sample_rate=22050,
+                    caption=f"GriffinLim #{batch_idx}",
                 )
         return None
 

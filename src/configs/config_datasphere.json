@@ -7,7 +7,7 @@
   },
   "data": {
       "train": {
-        "batch_size": 4,
+        "batch_size": 48,
         "num_workers": 8,
         "datasets": [
           {
@@ -68,6 +68,6 @@
     "grad_norm_clip": 5.0,
     "log_predictions_step_epoch": 5,
     "mixed_precision": true,
-    "len_epoch": 2
+    "len_epoch": 50
   }
 }

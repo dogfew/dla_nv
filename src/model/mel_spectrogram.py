@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 from torch import nn
 
 import torchaudio
 
 import librosa
+from torchaudio.transforms import InverseMelScale
 
 
 @dataclass
@@ -23,8 +25,8 @@ class MelSpectrogramConfig:
 
 class MelSpectrogram(nn.Module):
     def __init__(
-        self,
-        config: MelSpectrogramConfig,
+            self,
+            config: MelSpectrogramConfig,
     ):
         super(MelSpectrogram, self).__init__()
 
@@ -63,3 +65,26 @@ class MelSpectrogram(nn.Module):
         :return: Shape is [B, n_mels, T']
         """
         return self.mel_spectrogram(audio).clamp_(min=1e-5).log_()
+
+
+class GriffinLim(torchaudio.transforms.GriffinLim):
+    """GriffinLim algorithm as baseline for our task"""
+
+    def __init__(self):
+        self.config = MelSpectrogramConfig()
+        super().__init__(
+            n_fft=self.config.n_fft,
+            hop_length=self.config.hop_length,
+            win_length=self.config.win_length
+        )
+        self.transform = InverseMelScale(
+            sample_rate=self.config.sr,
+            n_stft=self.config.n_fft // 2 + 1,
+            f_min=0,
+            f_max=self.config.f_max,
+            norm="slaney",
+            mel_scale='slaney',
+            n_mels=self.config.n_mels)
+
+    def forward(self, mel_spec):
+        return super().forward(self.transform(mel_spec.exp()))
