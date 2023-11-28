@@ -75,7 +75,8 @@ class GriffinLim(torchaudio.transforms.GriffinLim):
         super().__init__(
             n_fft=self.config.n_fft,
             hop_length=self.config.hop_length,
-            win_length=self.config.win_length
+            win_length=self.config.win_length,
+            power=self.config.power
         )
         self.transform = InverseMelScale(
             sample_rate=self.config.sr,
