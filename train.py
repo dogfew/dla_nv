@@ -29,7 +29,7 @@ def main(config):
     logger = config.get_logger("train")
     # torch.autograd.set_detect_anomaly(True)
     # setup data_loader instances
-    dataloaders = get_dataloaders(config, None)
+    dataloaders = get_dataloaders(config)
 
     # build model architecture, then print to console
     model = config.init_obj(config["arch"], module_arch)
@@ -95,7 +95,6 @@ def main(config):
         scheduler_generator=scheduler_generator,
         scheduler_discriminator=scheduler_discriminator,
         len_epoch=config["trainer"].get("len_epoch", None),
-        log_step=config["trainer"].get("log_step", 200),
         log_predictions_step_epoch=config["trainer"].get(
             "log_predictions_step_epoch", 1
         ),
@@ -106,7 +105,7 @@ def main(config):
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser(description="PyTorch Template")
+    args = argparse.ArgumentParser(description="Train")
     args.add_argument(
         "-c",
         "--config",

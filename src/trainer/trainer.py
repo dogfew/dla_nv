@@ -17,10 +17,6 @@ from src.utils import optional_autocast
 
 
 class Trainer(BaseTrainer):
-    """
-    Trainer class
-    """
-
     def __init__(
             self,
             model,
@@ -31,7 +27,6 @@ class Trainer(BaseTrainer):
             config,
             device,
             dataloaders,
-            log_step=400,  # how often WANDB will log
             log_predictions_step_epoch=5,
             mixed_precision=False,
             scheduler_generator=None,
@@ -69,7 +64,6 @@ class Trainer(BaseTrainer):
         self.optimizer_discriminator = optimizer_discriminator
         self.scheduler_generator = scheduler_generator
         self.scheduler_discriminator = scheduler_discriminator
-        self.log_step = log_step
         self.log_predictions_step_epoch = log_predictions_step_epoch
         self.mixed_precision = mixed_precision
         self.train_metrics = MetricTracker(
@@ -286,6 +280,14 @@ class Trainer(BaseTrainer):
                 caption=f"#{batch_idx}",
             )
             self._log_spectrogram(batch, mode="test", idx=str(batch_idx))
+
+            if epoch == 1:
+                self.writer.add_audio(
+                    f"test_generated_{batch_idx}",
+                    batch["wave_true"].cpu().flatten(),
+                    sample_rate=22050,
+                    caption=f"#{batch_idx}",
+                )
         return None
 
     @staticmethod

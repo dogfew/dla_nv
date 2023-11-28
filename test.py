@@ -1,17 +1,19 @@
 import argparse
 import json
-import os
 from pathlib import Path
 
+import numpy as np
+import torchaudio
 import torch
+from tqdm import tqdm
+
 import src.model as module_model
+from src.trainer import Trainer
 from src.utils import ROOT_PATH
+from src.utils.object_loading import get_dataloaders
 from src.utils.parse_config import ConfigParser
-from src.waveglow import utils
-from src.synthesis.synthesis import Synthesizer
 import warnings
 import os
-import shutil
 
 warnings.filterwarnings("ignore")
 
@@ -36,41 +38,52 @@ def main(config, args):
     model.load_state_dict(state_dict)
     model = model.to(device)
     model.eval()
-    waveglow = utils.get_WaveGlow().cuda()
     output_dir = args.out_dir
-    synthesizer = Synthesizer(waveglow=waveglow, device=device, dir=output_dir)
     with torch.no_grad():
-        if args.text is not None:
-            raw_text = args.text
-            if not args.arpa_input:
-                preprocessed_phonemes = synthesizer.g2p(raw_text)
-                preprocessed_phonemes = [item.replace('.', ' ')
-                                         for item in preprocessed_phonemes if item != ' ']
-            else:
-                preprocessed_phonemes = raw_text.split(' ')
-                preprocessed_phonemes = [i if i != ' ' else '' for i in preprocessed_phonemes]
-            synthesizer(model, preprocessed_phonemes, idx='custom', alpha=args.speed, beta=args.pitch, gamma=args.energy)
-        else:
-            synthesizer.create_audios(model)
-    os.makedirs(os.path.join(output_dir, 'waveglow'), exist_ok=True)
-    os.makedirs(os.path.join(output_dir, 'default'), exist_ok=True)
-    files = os.listdir(output_dir)
-    for filename in files:
-        source_path = os.path.join(output_dir, filename)
-        if os.path.isdir(source_path):
-            continue
-        if filename.endswith("waveglow.wav"):
-            destination_path = os.path.join(output_dir, 'waveglow', filename)
-        else:
-            destination_path = os.path.join(output_dir, 'default', filename)
-        if os.path.exists(destination_path):
-            os.remove(destination_path)
-
-        shutil.move(source_path, destination_path)
+        if args.mel_dir is not None:
+            print(f"Processing mel files from {args.mel_dir}")
+            for mel_file in filter(
+                lambda f: f.endswith(".npy"), os.listdir(args.mel_dir)
+            ):
+                mel_path = os.path.join(args.mel_dir, mel_file)
+                mel_data = np.load(mel_path)
+                mel_tensor = torch.tensor(mel_data).to(device)
+                generated_audio = (
+                    model.generator(mel_tensor)["wave_fake"].cpu().view(1, -1)
+                )
+                output_filename = os.path.splitext(mel_file)[0] + ".wav"
+                torchaudio.save(
+                    os.path.join(args.out_dir, output_filename),
+                    generated_audio,
+                    sample_rate=args.sample_rate,
+                    format="wav",
+                )
+        elif args.audio_dir is not None:
+            print(f"Processing audios from {args.audio_dir}")
+            os.makedirs(os.path.join(output_dir), exist_ok=True)
+            for i, audio_file in enumerate(
+                list(filter(lambda f: f.endswith(".wav"), os.listdir(args.audio_dir)))
+            ):
+                batch = {
+                    "waves": torchaudio.load(os.path.join(args.audio_dir, audio_file))[
+                        0
+                    ]
+                }
+                batch = Trainer.move_batch_to_device(batch, device)
+                batch.update(model(**batch))
+                batch.update(model.generator(**batch))
+                generated_audio = batch["wave_fake"].cpu().view(1, -1)
+                output_filename = os.path.splitext(audio_file)[0] + ".wav"
+                torchaudio.save(
+                    os.path.join(args.out_dir, output_filename),
+                    generated_audio,
+                    sample_rate=args.sample_rate,
+                    format="wav",
+                )
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser(description="PyTorch Template")
+    args = argparse.ArgumentParser(description="Test")
     args.add_argument(
         "-c",
         "--config",
@@ -79,51 +92,39 @@ if __name__ == "__main__":
         help="config file path (default: None)",
     )
     args.add_argument(
+        "--sample_rate",
+        default=22050,
+        type=int,
+        help="sample rate of audio to generate",
+    )
+    args.add_argument(
         "-o",
         "--out_dir",
         default="final_results",
         type=str,
         help="Output directory for results (default: final_results)",
     )
-    args.add_argument(
-        "-p",
-        "--pitch",
-        default=1.0,
-        type=float,
-        help="Pitch adjustment factor (default: 1.0)",
-    )
-    args.add_argument(
-        "-s",
-        "--speed",
-        default=1.0,
-        type=float,
-        help="Speed adjustment factor (default: 1.0)",
-    )
-    args.add_argument(
-        "--arpa_input",
-        default=False,
-        type=bool,
-        help="Whether to use ARPA in custom text."
-    )
-    args.add_argument(
-        "-e",
-        "--energy",
-        default=1.0,
-        type=float,
-        help="Energy adjustment factor (default: 1.0)",
-    )
-    args.add_argument(
-        '--text',
-        default=None,
-        type=str,
-        help="Text to speech."
-    )
+    args.add_argument("--text", default=None, type=str, help="Text to speech.")
     args.add_argument(
         "-r",
         "--resume",
         default=str(DEFAULT_CHECKPOINT_PATH.absolute().resolve()),
         type=str,
         help="path to latest checkpoint (default: None)",
+    )
+    args.add_argument(
+        "-m",
+        "--mel_dir",
+        default=None,
+        type=str,
+        help="Directory with mel spectrograms",
+    )
+    args.add_argument(
+        "-a",
+        "--audio_dir",
+        default="test_data",
+        type=str,
+        help="Directory with audios",
     )
     args.add_argument(
         "-d",

@@ -14,7 +14,7 @@ from src.utils.parse_config import (
 )
 
 
-def get_dataloaders(configs: ConfigParser, audio):
+def get_dataloaders(configs: ConfigParser):
     dataloaders = {}
     for split, params in configs["data"].items():
         num_workers = params.get("num_workers", 1)
@@ -32,7 +32,6 @@ def get_dataloaders(configs: ConfigParser, audio):
                 configs.init_obj(
                     ds,
                     src.datasets,
-                    audio=audio,
                     config_parser=configs,
                 )
             )
