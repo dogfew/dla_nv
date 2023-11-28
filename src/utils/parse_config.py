@@ -6,6 +6,7 @@ import importlib
 from functools import partial
 from datetime import datetime
 
+from src.logger import setup_logging
 from src.utils import ROOT_PATH
 
 
@@ -18,8 +19,8 @@ class ConfigParser:
     def __init__(self, cfg: DictConfig, resume=None, modification=None, run_id=None):
         self._config = self._update_config(cfg, modification)
         self.resume = cfg.resume
-        print(self.resume)
         self.setup_directories(run_id)
+        setup_logging(self.log_dir)
         self.log_levels = {
             0: logging.WARNING,
             1: logging.INFO,
