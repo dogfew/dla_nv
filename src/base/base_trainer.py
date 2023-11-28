@@ -183,7 +183,7 @@ class BaseTrainer:
             "scheduler_generator": self.lr_schedulers[0].state_dict(),
             "scheduler_discriminator": self.lr_schedulers[1].state_dict(),
             "monitor_best": self.mnt_best,
-            "config": self.config,
+            "config": self.config.config,
         }
         filename = str(self.checkpoint_dir / "checkpoint-epoch{}.pth".format(epoch))
         if not (only_best and save_best):

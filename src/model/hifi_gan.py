@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 
 from src.model.mel_spectrogram import (
@@ -19,26 +18,40 @@ from src.model.ms_discriminator import (
 class HiFiGAN(nn.Module):
     """HiFiGAN"""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        res_kernel_sizes,
+        res_dilation_sizes,
+        up_init_channels,
+        up_strides,
+        up_kernels,
+        mp_period_list,
+        mp_channels_list,
+        ms_channels_list,
+        ms_kernels_list,
+        ms_strides_list,
+        ms_groups_list,
+        **kwargs
+    ):
         super().__init__()
 
         self.mel = MelSpectrogram(MelSpectrogramConfig()).cuda()
         self.generator = Generator(
-            res_kernel_sizes=[3, 7, 11],
-            res_dilation_sizes=[
-                [1, 3, 5],
-                [1, 3, 5],
-                [1, 3, 5],
-            ],
-            up_init_channels=512,
-            up_strides=[8, 8, 2, 2],
-            up_kernels=[16, 16, 4, 4],
+            res_kernel_sizes=res_kernel_sizes,
+            res_dilation_sizes=res_dilation_sizes,
+            up_init_channels=up_init_channels,
+            up_strides=up_strides,
+            up_kernels=up_kernels,
         )
-        self.mp_discriminator = MultiPeriodDiscriminator()
-        self.ms_discriminator = MultiScaleDiscriminator()
-        #
-        # self.mp_discriminator = torch.compile(self.mp_discriminator, mode="reduce-overhead")
-        # self.ms_discriminator = torch.compile(self.ms_discriminator, mode="reduce-overhead")
+        self.mp_discriminator = MultiPeriodDiscriminator(
+            period_list=mp_period_list, channels_list=mp_channels_list
+        )
+        self.ms_discriminator = MultiScaleDiscriminator(
+            ms_channels_list=ms_channels_list,
+            ms_kernels_list=ms_kernels_list,
+            ms_strides_list=ms_strides_list,
+            ms_groups_list=ms_groups_list,
+        )
 
     def forward(self, waves, **kwargs):
         return {

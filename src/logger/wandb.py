@@ -9,7 +9,6 @@ class WanDBWriter:
     def __init__(self, config, logger):
         self.writer = None
         self.selected_module = ""
-
         try:
             import wandb
 
@@ -17,10 +16,9 @@ class WanDBWriter:
 
             if config["trainer"].get("wandb_project") is None:
                 raise ValueError("please specify project name for wandb")
-
             wandb.init(
                 project=config["trainer"].get("wandb_project"),
-                config=config.config,
+                config=config,
             )
             self.wandb = wandb
 

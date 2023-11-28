@@ -11,13 +11,13 @@ class PeriodDiscriminator(nn.Module):
     def __init__(
         self,
         period,
+        channels,
         kernel_size=5,
         stride=3,
         norma_fun: Callable = weight_norm,
     ):
         super().__init__()
         self.period = period
-        channels = [1, 32, 128, 512, 1024, 1024]
         self.layers = nn.ModuleList()
 
         for i in range(len(channels) - 1):
@@ -64,11 +64,10 @@ class PeriodDiscriminator(nn.Module):
 
 
 class MultiPeriodDiscriminator(BaseDiscriminator):
-    def __init__(self):
+    def __init__(self, period_list, channels_list, **kwargs):
         super().__init__()
-        periods = [2, 3, 5, 7, 11]
         self.sub_discriminators = nn.ModuleList(
-            [PeriodDiscriminator(period) for period in periods]
+            [PeriodDiscriminator(period, channels_list) for period in period_list]
         )
 
     def forward(self, **batch):

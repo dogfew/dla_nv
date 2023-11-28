@@ -9,7 +9,7 @@ import src.datasets
 from src.collate_fn.collate import (
     collate_fn,
 )
-from src.utils.parse_config import (
+from src.utils.parse_config_old import (
     ConfigParser,
 )
 

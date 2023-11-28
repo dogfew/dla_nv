@@ -7,17 +7,20 @@ from src.model.base_discriminator import BaseDiscriminator
 
 
 class ScaleDiscriminator(torch.nn.Module):
-    def __init__(self, norm_fun: Callable = weight_norm):
+    def __init__(
+        self,
+        norm_fun: Callable,
+        ms_channels_list: list[int],
+        ms_kernels_list: list[int],
+        ms_strides_list: list[int],
+        ms_groups_list: list[int],
+    ):
         super().__init__()
         self.layers = nn.ModuleList([])
         in_channels = 1
-        channels_list = [128, 128, 256, 512, 1024, 1024, 1024]
-        kernels_list = [15, 41, 41, 41, 41, 41, 5]
-        strides_list = [1, 2, 2, 4, 4, 1, 1]
-        groups_list = [1, 4, 16, 16, 16, 16, 2]
 
         for out_channels, kernel_size, stride, groups in zip(
-            channels_list, kernels_list, strides_list, groups_list
+            ms_channels_list, ms_kernels_list, ms_strides_list, ms_groups_list
         ):
             self.layers.append(
                 nn.Sequential(
@@ -56,13 +59,13 @@ class ScaleDiscriminator(torch.nn.Module):
 
 
 class MultiScaleDiscriminator(BaseDiscriminator):
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
         self.sub_discriminators = nn.ModuleList(
             [
-                ScaleDiscriminator(spectral_norm),
-                ScaleDiscriminator(weight_norm),
-                ScaleDiscriminator(weight_norm),
+                ScaleDiscriminator(spectral_norm, **kwargs),
+                ScaleDiscriminator(weight_norm, **kwargs),
+                ScaleDiscriminator(weight_norm, **kwargs),
             ]
         )
         self.pooling = AvgPool1d(4, 2, padding=2)

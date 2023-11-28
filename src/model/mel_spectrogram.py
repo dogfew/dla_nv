@@ -25,8 +25,8 @@ class MelSpectrogramConfig:
 
 class MelSpectrogram(nn.Module):
     def __init__(
-            self,
-            config: MelSpectrogramConfig,
+        self,
+        config: MelSpectrogramConfig,
     ):
         super(MelSpectrogram, self).__init__()
 
@@ -76,7 +76,7 @@ class GriffinLim(torchaudio.transforms.GriffinLim):
             n_fft=self.config.n_fft,
             hop_length=self.config.hop_length,
             win_length=self.config.win_length,
-            power=self.config.power
+            power=self.config.power,
         )
         self.transform = InverseMelScale(
             sample_rate=self.config.sr,
@@ -84,8 +84,9 @@ class GriffinLim(torchaudio.transforms.GriffinLim):
             f_min=self.config.f_min,
             f_max=self.config.f_max,
             norm="slaney",
-            mel_scale='slaney',
-            n_mels=self.config.n_mels)
+            mel_scale="slaney",
+            n_mels=self.config.n_mels,
+        )
 
     def forward(self, mel_spec):
         return super().forward(self.transform(mel_spec.exp()))

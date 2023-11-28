@@ -19,21 +19,21 @@ from src.model.mel_spectrogram import GriffinLim
 
 class Trainer(BaseTrainer):
     def __init__(
-            self,
-            model,
-            criterion,
-            metrics,
-            optimizer_generator,
-            optimizer_discriminator,
-            config,
-            device,
-            dataloaders,
-            log_predictions_step_epoch=5,
-            mixed_precision=False,
-            scheduler_generator=None,
-            scheduler_discriminator=None,
-            len_epoch=None,
-            skip_oom=True,
+        self,
+        model,
+        criterion,
+        metrics,
+        optimizer_generator,
+        optimizer_discriminator,
+        config,
+        device,
+        dataloaders,
+        log_predictions_step_epoch=5,
+        mixed_precision=False,
+        scheduler_generator=None,
+        scheduler_discriminator=None,
+        len_epoch=None,
+        skip_oom=True,
     ):
         super().__init__(
             model,
@@ -102,11 +102,11 @@ class Trainer(BaseTrainer):
         self.criterion.train()
         self.train_metrics.reset()
         for i, batch in enumerate(
-                tqdm(
-                    self.train_dataloader,
-                    desc="train",
-                    total=self.len_epoch,
-                )
+            tqdm(
+                self.train_dataloader,
+                desc="train",
+                total=self.len_epoch,
+            )
         ):
             try:
                 batch = self.process_batch(
@@ -129,7 +129,9 @@ class Trainer(BaseTrainer):
             )
             if i == 0:
                 last_train_metrics = self.debug(
-                    batch, i, epoch,
+                    batch,
+                    i,
+                    epoch,
                 )
             elif i >= self.len_epoch:
                 break
@@ -142,13 +144,6 @@ class Trainer(BaseTrainer):
 
     @torch.no_grad()
     def debug(self, batch, batch_idx, epoch):
-        if self.writer is None:
-            return
-        self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
-        self.writer.add_scalar(
-            "epoch",
-            epoch,
-        )
         self.logger.debug(
             "Train Epoch: {} {} Loss D/G: {:.4f}/{:.4f}".format(
                 epoch,
@@ -157,46 +152,57 @@ class Trainer(BaseTrainer):
                 self.train_metrics.avg("generator_loss"),
             )
         )
-        self.writer.add_scalar(
-            "learning rate generator",
-            self.optimizer_generator.state_dict()["param_groups"][0]["lr"],
-        )
-        self.writer.add_scalar("scaler factor", self.scaler.get_scale())
-        self.writer.add_scalar(
-            "learning rate discriminator",
-            self.optimizer_discriminator.state_dict()["param_groups"][0]["lr"],
-        )
-        audio_generator_example = (
-            batch["wave_fake_detached"][0].detach().cpu().to(torch.float32).numpy().flatten()
-        )
-        audio_true_example = (
-            batch["wave_true"][0].detach().cpu().to(torch.float32).numpy().flatten()
-        )
-        self.writer.add_audio(
-            "generated",
-            audio_generator_example,
-            sample_rate=22050,
-        )
-        self.writer.add_audio(
-            "true",
-            audio_true_example,
-            sample_rate=22050,
-        )
-        self.writer.add_audio(
-            f"griffin-lim",
-            self.griffin_lim(batch['mel_true'][0].detach()).cpu().flatten(),
-            sample_rate=22050,
-        )
-        self._log_spectrogram(batch, mode="train")
         self._log_scalars(self.train_metrics)
         last_train_metrics = self.train_metrics.result()
         self.train_metrics.reset()
+        if self.writer is not None:
+            self._log_spectrogram(batch, mode="train")
+            self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
+            self.writer.add_scalar(
+                "epoch",
+                epoch,
+            )
+            self.writer.add_scalar(
+                "learning rate generator",
+                self.optimizer_generator.state_dict()["param_groups"][0]["lr"],
+            )
+            self.writer.add_scalar("scaler factor", self.scaler.get_scale())
+            self.writer.add_scalar(
+                "learning rate discriminator",
+                self.optimizer_discriminator.state_dict()["param_groups"][0]["lr"],
+            )
+            audio_generator_example = (
+                batch["wave_fake_detached"][0]
+                .detach()
+                .cpu()
+                .to(torch.float32)
+                .numpy()
+                .flatten()
+            )
+            audio_true_example = (
+                batch["wave_true"][0].detach().cpu().to(torch.float32).numpy().flatten()
+            )
+            self.writer.add_audio(
+                "generated",
+                audio_generator_example,
+                sample_rate=22050,
+            )
+            self.writer.add_audio(
+                "true",
+                audio_true_example,
+                sample_rate=22050,
+            )
+            self.writer.add_audio(
+                f"griffin-lim",
+                self.griffin_lim(batch["mel_true"][0].detach()).cpu().flatten(),
+                sample_rate=22050,
+            )
         return last_train_metrics
 
     def process_batch(
-            self,
-            batch,
-            metrics: MetricTracker,
+        self,
+        batch,
+        metrics: MetricTracker,
     ):
         batch = self.move_batch_to_device(batch, self.device)
         with torch.no_grad():
@@ -254,8 +260,8 @@ class Trainer(BaseTrainer):
     def _progress(self, batch_idx):
         base = "[{}/{} ({:.0f}%)]"
         if hasattr(
-                self.train_dataloader,
-                "n_samples",
+            self.train_dataloader,
+            "n_samples",
         ):
             current = batch_idx * self.train_dataloader.batch_size
             total = self.train_dataloader.n_samples
@@ -270,11 +276,13 @@ class Trainer(BaseTrainer):
 
     @torch.no_grad()
     def _evaluation_epoch(self, epoch, part, dataloader):
+        if self.writer is None:
+            return
         self.model.eval()
         for batch_idx, batch in tqdm(
-                enumerate(dataloader),
-                desc=part,
-                total=len(dataloader),
+            enumerate(dataloader),
+            desc=part,
+            total=len(dataloader),
         ):
             batch = self.move_batch_to_device(batch, self.device)
             batch.update(self.model(**batch))
@@ -297,11 +305,11 @@ class Trainer(BaseTrainer):
                 )
                 self.writer.add_audio(
                     f"test_griffinlim_{batch_idx}",
-                    self.griffin_lim(batch['mel_true']).cpu().flatten(),
+                    self.griffin_lim(batch["mel_true"]).cpu().flatten(),
                     sample_rate=22050,
                     caption=f"GriffinLim #{batch_idx}",
                 )
-        return None
+        return
 
     @staticmethod
     def make_image(buff):
@@ -349,8 +357,8 @@ class Trainer(BaseTrainer):
 
     @torch.no_grad()
     def _log_scalars(
-            self,
-            metric_tracker: MetricTracker,
+        self,
+        metric_tracker: MetricTracker,
     ):
         if self.writer is None:
             return

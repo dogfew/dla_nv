@@ -24,5 +24,7 @@ inflect~=7.0.0
 scipy>=1.11.3
 librosa~=0.10.1
 scikit-learn>=1.2.2
+hydra-core
+omegaconf
 # TextGrid~=1.5
 # iteround~=1.0.4

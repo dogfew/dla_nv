@@ -34,20 +34,26 @@ class DiscriminatorLoss(nn.Module):
 
 
 class GeneratorLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, generator_loss_scale, mel_loss_scale, feature_loss_scale):
         super().__init__()
         self.l1_loss = nn.L1Loss()
         self.mse = nn.MSELoss()
+        self.generator_loss_scale = generator_loss_scale
+        self.mel_loss_scale = mel_loss_scale
+        self.feature_loss_scale = feature_loss_scale
 
-    def _feature_loss_fn(self, true_list, fake_list, factor=0.2) -> torch.Tensor:
+    def _feature_loss_fn(self, true_list, fake_list) -> torch.Tensor:
         return sum(
-            self.l1_loss(true, fake) * factor
+            self.l1_loss(true, fake) * self.feature_loss_scale
             for true_sublist, fake_sublist in zip(true_list, fake_list)
             for true, fake in zip(true_sublist, fake_sublist)
         )
 
-    def _generator_loss_fn(self, discriminator_outputs, factor=0.1):
-        return sum((1.0 - dg).square().mean() * factor for dg in discriminator_outputs)
+    def _generator_loss_fn(self, discriminator_outputs):
+        return sum(
+            (1.0 - dg).square().mean() * self.generator_loss_scale
+            for dg in discriminator_outputs
+        )
 
     def forward(
         self,
@@ -71,18 +77,21 @@ class GeneratorLoss(nn.Module):
             + mp_generator_loss
             + ms_feature_loss
             + mp_feature_loss
-            + loss_mel * 4.5,
+            + loss_mel * self.mel_loss_scale,
             "mel_loss": loss_mel.detach(),
-            "feature_loss": (mp_feature_loss.detach() + ms_feature_loss.detach()) * 5,
+            "feature_loss": (mp_feature_loss.detach() + ms_feature_loss.detach())
+            / self.feature_loss_scale,
             "generator_gan_loss": (
                 ms_generator_loss.detach() + mp_generator_loss.detach()
             )
-            * 10,
+            / self.generator_loss_scale,
         }
 
 
 class HiFiGANLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, generator_loss_scale, mel_loss_scale, feature_loss_scale):
         super().__init__()
-        self.generator_loss = GeneratorLoss()
+        self.generator_loss = GeneratorLoss(
+            generator_loss_scale, mel_loss_scale, feature_loss_scale
+        )
         self.discriminator_loss = DiscriminatorLoss()
