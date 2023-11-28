@@ -283,7 +283,7 @@ class Trainer(BaseTrainer):
 
             if epoch == 1:
                 self.writer.add_audio(
-                    f"test_generated_{batch_idx}",
+                    f"test_true_{batch_idx}",
                     batch["wave_true"].cpu().flatten(),
                     sample_rate=22050,
                     caption=f"#{batch_idx}",
