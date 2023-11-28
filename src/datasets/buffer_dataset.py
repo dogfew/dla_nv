@@ -12,7 +12,7 @@ from src.model.mel_spectrogram import (
 
 
 class BufferDataset(Dataset):
-    def __init__(self, wav_dir, max_len=22528, **kwargs):
+    def __init__(self, wav_dir, max_len=22528, sr=22050, **kwargs):
         self.wav_dir = wav_dir
         self.max_len = max_len
         mel_config = MelSpectrogramConfig()
@@ -24,7 +24,7 @@ class BufferDataset(Dataset):
         ]
         self.buffer = []
         for file_path in tqdm(iterable=sorted(self.file_list), desc="Loading dataset"):
-            waveform, _ = librosa.load(file_path, sr=22050)
+            waveform, _ = librosa.load(file_path, sr=sr)
             entry = {
                 "wave": waveform,
                 "path": file_path,
