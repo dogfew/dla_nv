@@ -45,11 +45,10 @@ def get_dataloaders(configs):
         ), "You must provide batch_size or batch_sampler for each split"
         if "batch_size" in params:
             bs = params["batch_size"]
-            shuffle = "batch_size" != 1
+            shuffle = bs != 1
             batch_sampler = None
         else:
             raise Exception()
-
         # Fun fact. An hour of debugging was wasted to write this line
         assert bs <= len(
             dataset
