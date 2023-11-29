@@ -68,7 +68,7 @@ lr_scheduler:
 trainer:
   epochs: 400
   save_dir: saved/
-  save_period: 1
+  save_period: 20
   verbosity: 2
   visualize: "wandb"
   wandb_project: nv_project
