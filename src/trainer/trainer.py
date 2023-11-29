@@ -87,7 +87,8 @@ class Trainer(BaseTrainer):
         self.scaler.unscale_(optimizer)
         if self.config["trainer"].get("grad_norm_clip") is not None:
             try:
-                clip_grad_value_(parameters=self.model.parameters(), clip_value=1000.0)
+                clip_grad_value_(parameters=self.model.parameters(),
+                                 clip_value=self.config['trainer']['grad_max_abs'])
                 clip_grad_norm_(
                     parameters=self.model.parameters(),
                     max_norm=self.config["trainer"]["grad_norm_clip"],

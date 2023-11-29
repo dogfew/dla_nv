@@ -10,4 +10,6 @@ def collate_fn(batch):
         batch_first=True,
         padding_value=0,
     )
-    return {"waves": waves}
+    return {
+        "waves": waves
+    }

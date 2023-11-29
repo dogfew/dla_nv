@@ -1,23 +1,11 @@
 from torch import nn
-
-from src.model.mel_spectrogram import (
-    MelSpectrogram,
-    MelSpectrogramConfig,
-)
-from src.model.generator import (
-    Generator,
-)
-from src.model.mp_discriminator import (
-    MultiPeriodDiscriminator,
-)
-from src.model.ms_discriminator import (
-    MultiScaleDiscriminator,
-)
+from src.model.generator import Generator
+from src.model.mp_discriminator import MultiPeriodDiscriminator
+from src.model.ms_discriminator import MultiScaleDiscriminator
 
 
 class HiFiGAN(nn.Module):
     """HiFiGAN"""
-
     def __init__(
         self,
         res_kernel_sizes,
@@ -35,7 +23,6 @@ class HiFiGAN(nn.Module):
     ):
         super().__init__()
 
-        self.mel = MelSpectrogram(MelSpectrogramConfig()).cuda()
         self.generator = Generator(
             res_kernel_sizes=res_kernel_sizes,
             res_dilation_sizes=res_dilation_sizes,
@@ -55,6 +42,6 @@ class HiFiGAN(nn.Module):
 
     def forward(self, waves, **kwargs):
         return {
-            "mel_true": self.mel(waves),
+            "mel_true": self.generator.mel(waves),
             "wave_true": waves.unsqueeze(dim=1),
         }
