@@ -28,6 +28,8 @@ def main(cfg):
     config = ConfigParser(cfg)
     logger = config.get_logger("train")
     # torch.autograd.set_detect_anomaly(True)
+    print(f"Running training.\n"
+          f"Deterministic: {torch.are_deterministic_algorithms_enabled()}")
     dataloaders = get_dataloaders(config)
     model = config.init_obj(config["arch"], module_arch)
     logger.info(model)

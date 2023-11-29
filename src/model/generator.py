@@ -28,7 +28,7 @@ class ResBlock(nn.Module):
                         channels,
                         kernel_size,
                         dilation=dilation,
-                        padding='same',
+                        padding="same",
                     )
                 ),
                 nn.LeakyReLU(0.1),
@@ -37,7 +37,7 @@ class ResBlock(nn.Module):
                         channels,
                         channels,
                         kernel_size,
-                        padding='same',
+                        padding="same",
                     )
                 ),
             )
@@ -119,7 +119,7 @@ class Generator(torch.nn.Module):
                         channels,
                         out_channels=1,
                         kernel_size=7,
-                        padding='same',
+                        padding="same",
                     )
                 ),
                 nn.Tanh(),

@@ -6,6 +6,7 @@ from src.model.ms_discriminator import MultiScaleDiscriminator
 
 class HiFiGAN(nn.Module):
     """HiFiGAN"""
+
     def __init__(
         self,
         res_kernel_sizes,
