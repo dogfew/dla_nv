@@ -9,12 +9,9 @@ import src.datasets
 from src.collate_fn.collate import (
     collate_fn,
 )
-from src.utils.parse_config_old import (
-    ConfigParser,
-)
 
 
-def get_dataloaders(configs: ConfigParser):
+def get_dataloaders(configs):
     dataloaders = {}
     for split, params in configs["data"].items():
         num_workers = params.get("num_workers", 1)
