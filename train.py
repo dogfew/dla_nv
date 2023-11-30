@@ -22,14 +22,15 @@ torch.backends.cudnn.benchmark = True
 np.random.seed(SEED)
 
 
-@hydra.main(config_path="src/configs",
-            config_name="config.yaml")
+@hydra.main(config_path="src/configs", config_name="config.yaml")
 def main(cfg):
     config = ConfigParser(cfg)
     logger = config.get_logger("train")
     # torch.autograd.set_detect_anomaly(True)
-    print(f"Running training.\n"
-          f"Deterministic: {torch.are_deterministic_algorithms_enabled()}")
+    print(
+        f"Running training.\n"
+        f"Deterministic: {torch.are_deterministic_algorithms_enabled()}"
+    )
     dataloaders = get_dataloaders(config)
     model = config.init_obj(config["arch"], module_arch)
     logger.info(model)
@@ -39,7 +40,7 @@ def main(cfg):
     if len(device_ids) > 1:
         model = torch.nn.DataParallel(model, device_ids=device_ids)
     loss_module = config.init_obj(config["loss"], module_loss).to(device)
-    metrics = config['metrics']
+    metrics = config["metrics"]
     optimizer_generator = config.init_obj(
         config["optimizer"],
         torch.optim,

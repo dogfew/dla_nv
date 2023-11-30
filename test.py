@@ -25,8 +25,7 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
 
-@hydra.main(config_path="src/configs",
-            config_name="config.yaml")
+@hydra.main(config_path="src/configs", config_name="config.yaml")
 def main(config):
     config = ConfigParser(config)
     logger = config.get_logger("test")
@@ -43,13 +42,13 @@ def main(config):
     model.load_state_dict(state_dict)
     model = model.to(device)
     model.eval()
-    args = config['test_settings']
+    args = config["test_settings"]
     output_dir = args.out_dir
     with torch.no_grad():
         if args.mel_dir is not None:
             print(f"Processing mel files from {args.mel_dir}")
             for mel_file in filter(
-                    lambda f: f.endswith(".npy"), os.listdir(args.mel_dir)
+                lambda f: f.endswith(".npy"), os.listdir(args.mel_dir)
             ):
                 mel_path = os.path.join(args.mel_dir, mel_file)
                 mel_data = np.load(mel_path)
@@ -68,7 +67,7 @@ def main(config):
             print(f"Processing audios from {args.audio_dir}")
             os.makedirs(os.path.join(output_dir), exist_ok=True)
             for i, audio_file in enumerate(
-                    list(filter(lambda f: f.endswith(".wav"), os.listdir(args.audio_dir)))
+                list(filter(lambda f: f.endswith(".wav"), os.listdir(args.audio_dir)))
             ):
                 batch = {
                     "waves": torchaudio.load(os.path.join(args.audio_dir, audio_file))[
