@@ -73,7 +73,6 @@ trainer:
   visualize: "wandb"
   wandb_project: nv_project
   grad_norm_clip: 5.0
-  log_predictions_step_epoch: 5
   grad_max_abs: 1000
   mixed_precision: true
   len_epoch: 100
