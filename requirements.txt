@@ -6,25 +6,15 @@ llvmlite>0.39
 matplotlib~=3.8.2
 numpy>=1.25
 wget
-# kenlm>=0.2
 pandas~=2.1.3
 Pillow~=10.1.0
-# speechbrain>=0.5
-torch>=2
-# torch_audiomentations==0.11.0
-torchaudio>=2
+torch==2.1.1
+torchaudio==2.1.1
 torchvision>=0.16
 tqdm~=4.66.1
-# torchmetrics[audio]>=1.2.0
-# pyloudnorm
-# unidecode~=1.3.7
 inflect~=7.0.0
-# pyworld~=0.3.4
-# g2p_en
 scipy>=1.11.3
 librosa~=0.10.1
 scikit-learn>=1.2.2
 hydra-core
 omegaconf
-# TextGrid~=1.5
-# iteround~=1.0.4

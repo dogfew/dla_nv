@@ -34,7 +34,7 @@ def main(config):
     logger.info(model)
 
     logger.info("Loading checkpoint: {} ...".format(config.resume))
-    checkpoint = torch.load(config.resume, map_location=device)
+    checkpoint = torch.load(config['resume'], map_location=device)
     print("Checkpoint!")
     state_dict = checkpoint["state_dict"]
     if config["n_gpu"] > 1:
