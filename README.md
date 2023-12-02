@@ -23,7 +23,7 @@ cd ..
 ## Speech synthesis
 
 ### Generate sentences required in task
-You can just run this script and check audios in `final_results/waveglow`
+You can just run this script and check audios in `final_results/`
 If you have ready audios, run: 
 ```shell
 python test.py +resume="default_test_model/checkpoint.pth" test_settings.out_dir="final_results" test_settings.audio_dir="test_data"
