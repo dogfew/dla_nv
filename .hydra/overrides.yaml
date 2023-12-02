@@ -1,0 +1,3 @@
+- +resume=default_test_model/checkpoint.pth
+- test_settings.out_dir=final_results
+- test_settings.audio_dir=test_data
