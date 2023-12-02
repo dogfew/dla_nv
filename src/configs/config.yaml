@@ -59,6 +59,8 @@ metrics:
   - generator_gan_loss
   - feature_loss
   - mel_loss
+  - grad_norm_generator
+  - grad_norm_discriminator
 
 lr_scheduler:
   type: ExponentialLR
@@ -66,13 +68,13 @@ lr_scheduler:
     gamma: 0.998
 
 trainer:
-  epochs: 700
+  epochs: 1000
   save_dir: saved/
   save_period: 20
   verbosity: 2
   visualize: "wandb"
   wandb_project: nv_project
-  grad_norm_clip: 5.0
+  grad_norm_clip: 10
   grad_max_abs: 1000
   mixed_precision: true
   len_epoch: 100

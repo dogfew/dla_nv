@@ -68,11 +68,11 @@ class Trainer(BaseTrainer):
         self.log_predictions_step_epoch = log_predictions_step_epoch
         self.mixed_precision = mixed_precision
         self.train_metrics = MetricTracker(
-            "grad norm",
             *metrics,
             writer=self.writer,
         )
-        self.scaler = GradScaler(init_scale=512, enabled=self.mixed_precision)
+        self.scaler = GradScaler(init_scale=512, growth_interval=500,
+                                 enabled=self.mixed_precision)
         self.griffin_lim = GriffinLim().cuda()
 
     @staticmethod
@@ -126,10 +126,6 @@ class Trainer(BaseTrainer):
                     continue
                 else:
                     raise e
-            self.train_metrics.update(
-                "grad norm",
-                self.get_grad_norm(),
-            )
             if i == 0:
                 last_train_metrics = self.debug(
                     batch,
@@ -225,6 +221,10 @@ class Trainer(BaseTrainer):
             print("NaN gradients. Skipping batch")
             self.scaler.update()
             return batch
+        self.train_metrics.update(
+            "grad_norm_discriminator",
+            self.get_grad_norm(),
+        )
         self.scaler.step(self.optimizer_discriminator)
         self.scaler.update()
         with optional_autocast(enabled=self.mixed_precision):
@@ -251,6 +251,10 @@ class Trainer(BaseTrainer):
             return batch
         self.scaler.step(self.optimizer_generator)
         self.scaler.update()
+        self.train_metrics.update(
+            "grad_norm_generator",
+            self.get_grad_norm(),
+        )
 
         for item in batch:
             if item in self.train_metrics.keys():

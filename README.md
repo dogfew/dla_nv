@@ -16,8 +16,7 @@ pip install -r requirements.txt
 pip install gdown>4.7
 mkdir -p default_test_model
 cd default_test_model
-gdown 1Cv50C8s3Qq54_lndi6AobRQlljUCExLl -O checkpoint.pth
-gdown 1YNkqjKbgz3GzqN5NNUQ5q9suPvMXydOf -O config.json
+gdown 1fm1WN9_7TVpzMwYUJwtir6DpPCyQNATm -O checkpoint.pth
 cd ..
 ```
 
@@ -25,8 +24,14 @@ cd ..
 
 ### Generate sentences required in task
 You can just run this script and check audios in `final_results/waveglow`
+If you have ready audios, run: 
 ```shell
-python test.py +resume=<checkpoint_path> test_settings.mel_dir=None 
+python test.py +resume="default_test_model/checkpoint.pth" test_settings.out_dir="final_results" test_settings.audio_dir="test_data"
+```
+
+If you have ready mels in `.npy` format: 
+```shell 
+python test.py +resume="default_test_model/checkpoint.pth" test_settings.out_dir="final_results" test_settings.mel_dir="mel_test_data"
 ```
 
 ## Training
@@ -36,13 +41,11 @@ pip install -r requirements.txt
 bash prep_script.sh
 ```
 
-To reproduce my final model, train FastSpeech2 with this config (400 epochs): 
+To reproduce my final model, train Hi-Fi GAN. Config path: `src/configs/config.yaml`: 
 ```shell
-python train.py data.train.batch_size=16 data.train.datasets.0.args.max_len=45056
+python train.py
 ```
 
 **Optional Tasks:**
 
-- (up to +1.5) MFA alignments (in textgrid format) which are downloadable with `prep_script.sh`.
-Alignments are created in a script `generate_data_mfc.py` and the final model
-is trained on them. 
+- (up to +1) for Hydra. There were major changes in `src/utils/parse_config.py`, `train.py` and `test.py` files
