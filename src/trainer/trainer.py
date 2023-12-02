@@ -71,8 +71,9 @@ class Trainer(BaseTrainer):
             *metrics,
             writer=self.writer,
         )
-        self.scaler = GradScaler(init_scale=512, growth_interval=500,
-                                 enabled=self.mixed_precision)
+        self.scaler = GradScaler(
+            init_scale=512, growth_interval=500, enabled=self.mixed_precision
+        )
         self.griffin_lim = GriffinLim().cuda()
 
     @staticmethod

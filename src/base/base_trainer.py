@@ -72,8 +72,8 @@ class BaseTrainer:
             cfg_trainer["visualize"],
         )
 
-        if config['resume'] is not None:
-            self._resume_checkpoint(config['resume'])
+        if config["resume"] is not None:
+            self._resume_checkpoint(config["resume"])
 
     @abstractmethod
     def _train_epoch(self, epoch):

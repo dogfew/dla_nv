@@ -1,20 +1,15 @@
-import argparse
-import json
-from pathlib import Path
+import os
+import warnings
 
+import hydra
 import numpy as np
-import torchaudio
 import torch
-from tqdm import tqdm
+import torchaudio
 
 import src.model as module_model
 from src.trainer import Trainer
 from src.utils import ROOT_PATH
-from src.utils.object_loading import get_dataloaders
 from src.utils.parse_config import ConfigParser
-import warnings
-import os
-import hydra
 
 warnings.filterwarnings("ignore")
 
@@ -34,8 +29,8 @@ def main(config):
     logger.info(model)
 
     logger.info("Loading checkpoint: {} ...".format(config.resume))
-    print(config['resume'])
-    checkpoint = torch.load(config['resume'], map_location=device)
+    print(config["resume"])
+    checkpoint = torch.load(config["resume"], map_location=device)
     print("Checkpoint!")
     state_dict = checkpoint["state_dict"]
     if config["n_gpu"] > 1:
