@@ -114,11 +114,11 @@ hydra:
     task:
     - +resume=default_test_model/checkpoint.pth
     - test_settings.out_dir=final_results
-    - test_settings.mel_dir=mel_test_data
+    - test_settings.audio_dir=test_data
   job:
     name: test
     chdir: null
-    override_dirname: +resume=default_test_model/checkpoint.pth,test_settings.mel_dir=mel_test_data,test_settings.out_dir=final_results
+    override_dirname: +resume=default_test_model/checkpoint.pth,test_settings.audio_dir=test_data,test_settings.out_dir=final_results
     id: ???
     num: ???
     config_name: config.yaml

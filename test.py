@@ -34,6 +34,7 @@ def main(config):
     logger.info(model)
 
     logger.info("Loading checkpoint: {} ...".format(config.resume))
+    print(config['resume'])
     checkpoint = torch.load(config['resume'], map_location=device)
     print("Checkpoint!")
     state_dict = checkpoint["state_dict"]

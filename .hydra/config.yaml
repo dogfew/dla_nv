@@ -131,5 +131,5 @@ device: cuda
 test_settings:
   sample_rate: 22050
   out_dir: final_results
-  mel_dir: mel_test_data
+  mel_dir: null
   audio_dir: test_data
